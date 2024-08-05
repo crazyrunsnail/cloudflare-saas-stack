@@ -187,7 +187,7 @@ async function createDatabaseAndConfigure() {
 	outro("Database configuration completed.");
 }
 
-async function createPagesProject() {
+async function createPagesProjectAndConfigure() {
 	const pagesProjectSpinner = spinner();
 	const defualtPagesName = path.basename(process.cwd());
 	pagesName = await prompt(
@@ -199,6 +199,39 @@ async function createPagesProject() {
 	executeCommand(
 		`wrangler pages project create ${pagesName} --production-branch ${branch}`,
 	);
+	const wranglerTomlPath = path.join(
+		__dirname,
+		"..",
+		"apps",
+		"web",
+		"wrangler.toml",
+	);
+	let wranglerToml: toml.JsonMap;
+
+	try {
+		const wranglerTomlContent = fs.readFileSync(wranglerTomlPath, "utf-8");
+		wranglerToml = toml.parse(wranglerTomlContent);
+	} catch (error) {
+		console.error("\x1b[31mError reading wrangler.toml:", error, "\x1b[0m");
+		cancel("Operation cancelled.");
+	}
+
+	// Update wrangler.toml with database configuration
+	wranglerToml = {
+		...wranglerToml!,
+		name: pagesName
+	};
+
+	try {
+		const updatedToml = toml.stringify(wranglerToml);
+		fs.writeFileSync(wranglerTomlPath, updatedToml);
+		console.log(
+			"\x1b[33mProject name configuration updated in wrangler.toml\x1b[0m",
+		);
+	} catch (error) {
+		console.error("\x1b[31mError updating wrangler.toml:", error, "\x1b[0m");
+		cancel("Operation cancelled.");
+	}
 	pagesProjectSpinner.stop("Pages project created.");
 }
 
@@ -331,7 +364,7 @@ async function main() {
 		}
 
 		try {
-			await createPagesProject();
+			await createPagesProjectAndConfigure();
 		} catch (error) {
 			console.error("\x1b[31mError:", error, "\x1b[0m");
 			cancel("Operation cancelled.");
