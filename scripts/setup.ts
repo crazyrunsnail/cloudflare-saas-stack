@@ -162,9 +162,9 @@ async function createDatabaseAndConfigure() {
         d1_databases: [
             {
                 binding: "DATABASE",
+                migrations_dir: "drizzle",
                 database_name: dbName,
                 database_id: databaseID!,
-                migrations_dir: "drizzle"
             },
         ],
     };
